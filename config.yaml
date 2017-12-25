@@ -1,0 +1,27 @@
+# Configuration settings for sensor reading apps
+
+# Options related to sending data to a local file
+record:
+    enabled: true
+    file: sensordata.csv
+    daily: true
+
+# Options related to sending data to remore server in real-time
+cloud:
+    enabled: true
+    host: 192.168.2.31
+    port: 8088
+    dbname: house
+    dbuser: root
+    dbpwd: root
+
+# Plotting options
+display:
+    enabled: false
+    subplots: 2
+    window: 10
+
+# Logging options
+logs:
+    file: service.log
+    level: debug
