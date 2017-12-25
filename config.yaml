@@ -8,7 +8,7 @@ record:
 
 # Options related to sending data to remore server in real-time
 cloud:
-    enabled: true
+    enabled: false
     host:
     port:
     dbname: house

@@ -1,0 +1,13 @@
+[Unit]
+Description=Sensor Data Collection Service
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/sensors
+ExecStart=/home/pi/sensors/run_server.sh
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
