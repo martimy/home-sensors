@@ -9,11 +9,11 @@ record:
 # Options related to sending data to remore server in real-time
 cloud:
     enabled: true
-    host: 192.168.2.31
-    port: 8088
+    host:
+    port:
     dbname: house
-    dbuser: root
-    dbpwd: root
+    dbuser:
+    dbpwd:
 
 # Plotting options
 display:
