@@ -18,13 +18,13 @@ sensors:
 # Options related to sending data to a local file
 record:
     enabled: true
-    format: influx             # or csv
-    file: sensordata.csv    # the extension will be ignored
-    daily: true        
+    format: influx              # or csv
+    file: /home/pi/sensordata/sensordata.csv        # the extension will be ignored
+    daily: true                 # recommended       
         
 # Options related to sending data to remore server in real-time
 cloud:
-    enabled: false
+    enabled: false          # this affects real-time only
     host: 192.168.2.31
     port: 8086
     dbname: house
@@ -40,4 +40,5 @@ display:
 # Logging options
 logs:
     file: service.log
-    level: debug
+    level: info
+
