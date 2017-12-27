@@ -1,9 +1,0 @@
-[Unit]
-Description=Run sensordata-send service every hour
-
-[Timer]
-OnBootSec=5min
-OnUnitActiveSec=1hr 
-
-[Install]
-WantedBy=timers.target
