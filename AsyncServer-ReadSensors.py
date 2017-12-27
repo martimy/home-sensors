@@ -1,10 +1,13 @@
+# This file is part of home sesnors project.
+# Copyright (c) 2017, Guy Kemeber, Samer Mansour, and Maen Artimy
+
 import asyncore, socket, logging, os, sys
 from io import StringIO
 from cloudservice import CloudService
 from display import DataPlotter
 from cfg import ConfigReader
 from recorder import DataRecorder
-
+import util
 
 class SensorHandler(asyncore.dispatcher):
     """
@@ -19,6 +22,8 @@ class SensorHandler(asyncore.dispatcher):
     ETX = b'\x03'
     data_sample = ''
 
+    sensor_info = {}
+    
     """
     optional services:
       - local file recording
@@ -32,9 +37,13 @@ class SensorHandler(asyncore.dispatcher):
     def __init__(self, sock):
         asyncore.dispatcher.__init__(self, sock)
         self.set_socket(sock)
-        self.logger = logging.getLogger("sensorlog")
+        #self.logger = logging.getLogger("sensorlog")
         self.read_buffer = StringIO()
         logging.info("SensorHandler intstantiated");
+
+    @staticmethod
+    def set_sensors(info):
+        SensorHandler.sensor_info = info
 
     @staticmethod
     def set_recording(rec):
@@ -69,10 +78,10 @@ class SensorHandler(asyncore.dispatcher):
         data_float = map(lambda x: float(x), data_str)
         logging.debug('Received from sensor: {} data: [{}]'.format(sensor_name, ','.join(data_str)))
 
-        if self.rec:
-            self.rec.writeData(data_float)
-        else:
-            print(data_float)
+        if self.rec and sensor_name in self.sensor_info.keys(): # no need for keys() in Python 3
+            # If the senesor is predefined in the config file
+            fields = self.sensor_info[sensor_name]
+            self.rec.writeData(sensor_name, fields, data_float)
                    
         # Plotting should not be called when the server is run as a background service
         if self.disp:
@@ -110,28 +119,18 @@ class AcceleroServer(asyncore.dispatcher):
         print('handle_close()')
         self.close()
 
-LOGNAME = 'sensorlog'
-LOGFORMAT = '%(asctime)s %(levelname)s:%(message)s'
-
 if __name__ == "__main__":
     # Read configuration file
     cfg = ConfigReader('config.yaml')
 
-    # Setup logging
-    logging.getLogger(LOGNAME)
-    logfile = cfg.get("logs_file")
-    if cfg.get("logs_level").upper() == 'DEBUG':
-        loglevel = logging.DEBUG
-    else:
-        loglevel = logging.INFO
-    logging.basicConfig(format=LOGFORMAT, filename=logfile, level=loglevel)
-
+    # Set sensor definitions
+    SensorHandler.set_sensors(cfg.getSection("sensors"))
+    
     # Set optional modules for SensorHandler
     # Send all sensor data to a local file
     if cfg.get("record_enabled"):
-        filename = cfg.get("record_file")
-        dailyfiles = cfg.get("record_daily")
-        SensorHandler.set_recording(DataRecorder(filename, daily=dailyfiles))
+        rec_settings = cfg.getSection("record")
+        SensorHandler.set_recording(DataRecorder(**rec_settings))
 
     # Plot the data (should be enabled only when the app runs standalone)
     if cfg.get("display_enabled"):
@@ -147,7 +146,7 @@ if __name__ == "__main__":
     # Run the server
     local_host = cfg.get("local_host")
     local_port = cfg.get("local_port")
-    server = AcceleroServer (local_host, local_port)
+    server = AcceleroServer(local_host, local_port)
     asyncore.loop()
 
 

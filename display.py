@@ -1,3 +1,6 @@
+# This file is part of home sesnors project.
+# Copyright (c) 2017, Guy Kemeber, Samer Mansour, and Maen Artimy
+
 import matplotlib.pyplot as plt
 
 """

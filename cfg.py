@@ -1,4 +1,8 @@
+# This file is part of home sesnors project.
+# Copyright (c) 2017, Guy Kemeber, Samer Mansour, and Maen Artimy
+
 import yaml
+
 
 class ConfigReader():
     """
@@ -21,6 +25,13 @@ class ConfigReader():
                 self.cfg = yaml.load(ymlfile)
         except:
             exit("Configuration file not found!")
+
+    def getSection(self, section):
+        """
+        The method expects the input param to be the name of a configurations
+        section. If the section is not found, an empty dictionary is returned.
+        """
+        return self.cfg.get(section, {})
 
     def get(self, param):
         """

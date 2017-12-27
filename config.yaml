@@ -1,19 +1,35 @@
+# This file is part of home sesnors project.
+# Copyright (c) 2017, Guy Kemeber, Samer Mansour, and Maen Artimy
+
+
 # Configuration settings for sensor reading apps
+
+# Sensor details
+# sensor names are case sensitive
+sensors:
+    DHT:
+        - temperature
+        - humidity
+    acc:
+        - x
+        - y
+        - z
 
 # Options related to sending data to a local file
 record:
     enabled: true
-    file: sensordata.csv
-    daily: true
-
+    format: influx             # or csv
+    file: sensordata.csv    # the extension will be ignored
+    daily: true        
+        
 # Options related to sending data to remore server in real-time
 cloud:
     enabled: false
-    host:
-    port:
+    host: 192.168.2.31
+    port: 8086
     dbname: house
-    dbuser:
-    dbpwd:
+    patch: 50
+    retries: 3
 
 # Plotting options
 display:
