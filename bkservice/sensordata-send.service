@@ -1,0 +1,13 @@
+[Unit]
+Description=Sensor Data Send Service
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/sensors
+ExecStart=/home/pi/sensors/run-sender.sh
+Restart=on-abort
+
+[Install]
+WantedBy=multi-user.target
