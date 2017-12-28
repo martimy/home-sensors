@@ -41,7 +41,7 @@ class BatchSender():
 
         dbname = args.get('dbname', None)
         if not dbname: exit(self.not_found_msg.format("Database name"))
-        self.patch_size = args.get('patch', 1)
+        self.batch_size = args.get('batch', 1)
         self.retries = args.get('retries', 3)
 
         self.url_write = self.url_write_template.format(host, port, dbname)
