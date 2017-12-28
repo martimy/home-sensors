@@ -28,7 +28,7 @@ cloud:
     host: 192.168.2.31
     port: 8086
     dbname: house
-    patch: 50
+    batch: 50
     retries: 3
 
 # Plotting options
