@@ -8,7 +8,7 @@ import util
 import logging, fnmatch, time, calendar, os, sys, csv, requests
 
 
-class PatchSender():
+class BatchSender():
     """
     This class reads the local data files and send the data to a remote sever.
     To prevent the class from sendig the data again, the names of the processed
@@ -41,7 +41,7 @@ class PatchSender():
 
         dbname = args.get('dbname', None)
         if not dbname: exit(self.not_found_msg.format("Database name"))
-        self.patch_size = args.get('patch', 1)
+        self.batch_size = args.get('batch', 1)
         self.retries = args.get('retries', 3)
 
         self.url_write = self.url_write_template.format(host, port, dbname)
@@ -195,7 +195,7 @@ if __name__ == '__main__':
     fullname = cfg.get("record_file")
     cloud_settings = cfg.getSection("cloud")
     
-    sender = PatchSender(**cloud_settings)
+    sender = BatchSender(**cloud_settings)
     sender.sendData(fullname)
            
 ##    t = '2017-12-27 00:28:09.270813'  # UTC
