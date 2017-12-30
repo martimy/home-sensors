@@ -112,7 +112,7 @@ class BatchSender():
         with open(filename, 'r') as f:
             reader = csv.reader(f)
             a = datetime.now()
-            index, counter, payload = 0, self.patch_size, []
+            index, counter, payload = 0, self.batch_size, []
             for row in reader:
                 payload.append(self._getInfluxPayload(row))
                 if not index % counter:
@@ -138,7 +138,7 @@ class BatchSender():
         with open(filename, 'r') as f:
             reader = f.readlines()
             a = datetime.now()
-            index, counter, payload = 0, self.patch_size, []
+            index, counter, payload = 0, self.batch_size, []
             for row in reader:
                 payload.append(row)
                 if not index % counter:
