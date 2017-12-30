@@ -24,13 +24,13 @@ class DataRecorder():
         self.fileprefix = os.path.splitext(filename)[0]
         self.format = settings.get('format', 'influx')
 
-    def writeData(self, sensorname, fieldnames, data):
+    def writeData(self, sensorname, fieldnames, data, tags=['tag=dummy']):
         if self.format.upper() == self.INFLUX_FORMAT:
-            self.writeInfluxData(sensorname, fieldnames, data)
+            self.writeInfluxData(sensorname, fieldnames, data, tags)
         elif self.format.upper() == self.CSV_FORMAT:
-            self.writeCSVData(sensorname, fieldnames, data)
+            self.writeCSVData(sensorname, fieldnames, data, tags)
         
-    def writeCSVData(self, sensorname, fieldnames, data):
+    def writeCSVData(self, sensorname, fieldnames, data, tags):
         if self.daily:
             # Open a new file for each day
             filename = self.fileprefix + '-' + str(date.today()) + self.ext_csv
@@ -42,14 +42,18 @@ class DataRecorder():
             writer = csv.writer(myFile)
             writer.writerow([str(datetime.utcnow())] + [sensorname] + data)
 
-    def writeInfluxData(self, sensorname, fieldnames, data):
-        # 'sensorname, field1=value1,...,fieldN=valueN time'
+    def writeInfluxData(self, sensorname, fieldnames, data, tags):
+        """
+        Writes the data recieved from the sensor into a file using a format undrstood by
+        InfluxDB API (commas and spaces are important):
+        sensorname,tag1=tagvalue1,...,tag2=tagvalue2 field1=value1,...,fieldN=valueN time
+        """
 
         assert len(fieldnames) == len(data)
 
         dt = datetime.now()
         ns = time.mktime(dt.utctimetuple()) * 1e9
-        line = '{},room=basement '.format(sensorname)
+        line = '{},{} '.format(sensorname, ','.join(tags))
 
         flist = []
         for f, d in zip(fieldnames, data):
@@ -73,15 +77,15 @@ if __name__ == "__main__":
 
     import random, time
 
-##    recorder = DataRecorder('/home/pi/sensors/csvexample.csv', daily=True)
-##    start_time = time.time()
-##    while time.time() - start_time < 10:
-##        recorder.writeCSVData([random.random()])
-##        time.sleep(1)
-
-    recorder = DataRecorder('/home/pi/sensors/influxexample.dat', daily=True)
+    recorder = DataRecorder(**{'file':'/home/pi/sensors/influxexample.csv', 'daily':False})
     start_time = time.time()
     while time.time() - start_time < 10:
-        recorder.writeInfluxData('dht', ['temperature','humudity'], [random.random()*20, random.random()*30])
+        recorder.writeCSVData('dht', ['temperature','humudity'], [random.random()*20, random.random()*30], ['tag=dummy'])
+        time.sleep(1)
+
+    recorder = DataRecorder(**{'file':'/home/pi/sensors/influxexample.dat', 'daily':False})
+    start_time = time.time()
+    while time.time() - start_time < 10:
+        recorder.writeInfluxData('dht', ['temperature','humudity'], [random.random()*20, random.random()*30], ['tag=dummy'])
         time.sleep(1)
 

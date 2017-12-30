@@ -72,16 +72,25 @@ class SensorHandler(asyncore.dispatcher):
     
 
     def _handle_sample(self, data_sample):
+        """
+        This method extract information in the sensor message.
+        The message format is STX sensor_name ,
+                                num_values , val_1 , ..., val_n ,
+                                tag1=tagvalue1, ... ETX
+        """
         msg_str = data_sample[1:-1].split(',')
         sensor_name = msg_str[0]
-        data_str = msg_str[1:]
+        num_values = int(msg_str[1])
+        data_str = msg_str[2:num_values+2]
         data_float = map(lambda x: float(x), data_str)
-        logging.debug('Received from sensor: {} data: [{}]'.format(sensor_name, ','.join(data_str)))
+        sensor_tags = msg_str[num_values+2:]
+        #tag_dict = dict([t.split('=') for t in sensor_tags])
+        logging.debug('Received from sensor: {}, data: [{}], tags: [{}]'.format(sensor_name, ','.join(data_str), ','.join(sensor_tags)))
 
+        # If the senesor name is found in the config file
         if self.rec and sensor_name in self.sensor_info.keys(): # no need for keys() in Python 3
-            # If the senesor is predefined in the config file
             fields = self.sensor_info[sensor_name]
-            self.rec.writeData(sensor_name, fields, data_float)
+            self.rec.writeData(sensor_name, fields, data_float, tags=sensor_tags)
                    
         # Plotting should not be called when the server is run as a background service
         if self.disp:
