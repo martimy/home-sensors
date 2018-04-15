@@ -1,6 +1,6 @@
 # home-sensors
 
-This project is used to collect (Arduino) sensor data and save it to local files as well as send the data to remote server on regular basis.
+This project is a collection of apps that collect sensor data and save it to local files, then send the data to remote server, periodically.
 
 
 ## Installation
