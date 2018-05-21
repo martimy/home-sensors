@@ -10,4 +10,8 @@ This project is a collection of apps that collect sensor data and save it to loc
 * Clone the repository to your home folder
 $ git clone https://github.com/martimy/home-sensors
 
-### 
+### Dependencies
+* InfluxDB: pip install influxdb
+* yaml: pip install pyyaml
+
+

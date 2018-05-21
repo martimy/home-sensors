@@ -25,7 +25,7 @@ record:
 # Options related to sending data to remore server in real-time
 cloud:
     enabled: false          # this affects real-time only
-    host: 192.168.2.31
+    host: 192.168.2.12
     port: 8086
     dbname: house
     batch: 50

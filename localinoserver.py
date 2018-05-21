@@ -27,10 +27,10 @@ sock.bind((UDP_IP, UDP_PORT))
 
 
 #----- Write to file -------------------------------------------------------
-f = open(time.strftime("%Y%m%d-%H%M%S") + '_Rohdaten.csv','w')
-f.write('H&L Localino data receveier. \n')
+#f = open(time.strftime("%Y%m%d-%H%M%S") + '_Rohdaten.csv','w')
+#f.write('H&L Localino data receveier. \n')
 
-meter_wanted = 1
+#meter_wanted = 1
 
 #------ MAIN ----
 # format:
