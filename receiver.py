@@ -1,21 +1,17 @@
-# This file is part of home sesnors project.
+# This file is part of home sensors project.
 # Copyright (c) 2018, Guy Kemeber, Samer Mansour, and Maen Artimy
 
-from datetime import datetime
-from influxdb import InfluxDBClient
-#from cfg import ConfigReader
-import util
-import logging
-import fnmatch
-import time
-import calendar
-import os
-import sys
-import csv
 import requests
+from datetime import datetime as dt
+from datetime import timedelta as delta
+#import matplotlib.pyplot as plt
 
+# To differentiate between volunteers
+rr_tag_filter = ['3136471934373039260400', '31364719343730391F0400']
 
-class BatchReceiver():
+GAP_TIME = 30 #Secounds
+
+class DataReceiver():
     """Use this class to get data from the server
     """
     url_read_template = 'http://{}:{}/query'
@@ -23,89 +19,143 @@ class BatchReceiver():
     failed_log_msg = 'Attempt to send data from "{}" to remote server was not successful.'
     not_found_msg = '{} not defined!'
 
-    hours_past = 3
-
     def __init__(self, **args):
-        if not args:
-            exit(self.not_found_msg.format("Cloud settings"))
-        host = args.get('host', None)
-        if not host:
-            exit(self.not_found_msg.format("Host address"))
+        host = args.get('host', '0.0.0.0')
         port = args.get('port', 8086)
+        self.url_read = self.url_read_template.format(host, port)
 
-        dbname = args.get('dbname', None)
-        if not dbname:
-            exit(self.not_found_msg.format("Database name"))
-
-        self.batch_size = args.get('batch', 1)
-        self.retries = args.get('retries', 3)
-
-        self.url_read = self.url_read_template.format(host, port, dbname)
-
-    def receiveData(self):
+    def retrieve_data(self, **args):
         """
         Sends a GET requet to the remote server.
         """
 
-        # Change the SELECT statement to retrieve the desired data set
-        # Example 1
-        #payload = {'db':'house', 'q':"SELECT range, cycle FROM LOC WHERE anchor='34354715313135302C0200' and time > '2018-02-22'"}
-        # Example 2
-        payload = {
-            'db': 'house', 'q': "SELECT * FROM LOC WHERE time >= '2018-02-22T00:00:00Z' and time <'2018-02-24T01:00:00Z'"}
+        dbname = args.get('dbname', None)
+        if not dbname:
+            exit(self.not_found_msg.format("Database name"))
+        series = args.get('series', None)
+        if not dbname:
+            exit(self.not_found_msg.format("series name"))
+        time_start = args.get('start', None)
+        if not dbname:
+            exit(self.not_found_msg.format("start time"))
+        time_end = args.get('end', None)
+        if not dbname:
+            exit(self.not_found_msg.format("end time"))
 
-        r = requests.get(self.url_read, payload)
-        if r.status_code == 200:
-            self.cleanData(r.json()["results"])
+        query = "SELECT * FROM {} WHERE time >= '{}' and time <'{}'".format(series, time_start, time_end)
+        payload = {'db': dbname, 'q': query}
+
+        try:
+            r = requests.get(self.url_read, payload)
+            if r.status_code == 200:
+                return r.json()["results"]
+        except Exception as e:
+            print(e)
+        return None
+
+    def print_data(self, series, filename="timeseries.txt", header=False):
+        with open(filename, 'w') as file:
+            if header:
+                file.write(','.join(series['columns'])+"\n")
+            for values in series['values']:
+                file.write(','.join(map(str, values))+"\n")
+
+    def generate_states(self, series, filter=None):
+        trans = []
+        states = {None: 0}
+
+        ANCHOR = series["columns"].index("anchor")
+        TAG = series["columns"].index("tag")
+        TIME =  series["columns"].index("time")
+
+        if filter:
+            filtered = [values for values in series['values'] if values[TAG] in filter]
         else:
-            print("error ", r.json())
+            filtered = series['values']
 
-    def cleanData(self, results):
-        """
-        if this is the SELECT statement
-            SELECT range, cycle FROM LOC WHERE anchor='34354715313135302C0200' and time > '2018-02-22'
-        Then, the  data from InfluxDB comes similar to this:
-            {
-            "results": [
-                {
-                    "statement_id": 0,
-                    "series": [
-                        {
-                            "name": "LOC",
-                            "columns": [
-                                "time",
-                                "range",
-                                "cycle"
-                            ],
-                            "values": [
-                                [
-                                    "2018-02-23T21:55:43.702900257Z",
-                                    25.0,
-                                    34
-                                ],
-                                [
-                                    "2018-02-23T21:55:43.702900257Z",
-                                    25.4,
-                                    35
-                                ],
-                                ...
-                            ]
-                        }
-                    ]
-                },
-                ...
-            }
-        """
-        print(len(results))
-        for statement in results:
-            for series in statement['series']:
-                print(','.join(series['columns']))
-                for values in series['values']:
-                    print(','.join(map(str, values)))
+        last_time = dt.strptime(filtered[0][TIME], '%Y-%m-%dT%H:%M:%SZ')
+        last_anchor_time = last_time
+        last_anchor = filtered[0][ANCHOR]
 
+        for values in filtered:
+            time = dt.strptime(values[TIME], '%Y-%m-%dT%H:%M:%SZ')
+            if time - last_time > delta(seconds = GAP_TIME):
+                # gap detected, start over
+                # df = time - last_time
+                # print('{}, Anchor change : {}, Anchor: {}'.format(last_anchor_time, last_time - last_anchor_time, last_anchor))
+                # print('{}, Gap detected  : {}, Anchor: {}'.format(last_time, df, values[ANCHOR]))
+                trans += [[str(last_anchor_time), last_anchor]]
+                trans += [[str(last_time), None]]
+                states.setdefault(last_anchor, len(states))
+
+                # start over
+                last_time = dt.strptime(values[TIME], '%Y-%m-%dT%H:%M:%SZ')
+                last_anchor_time = last_time
+                last_anchor = values[ANCHOR]
+
+                continue
+
+            if values[ANCHOR] != last_anchor:
+                # df = time - last_anchor_time
+                # print('{}, Anchor change : {}, Anchor: {}'.format(last_anchor_time, df, last_anchor))
+                trans += [[str(last_anchor_time), last_anchor]]
+                states.setdefault(last_anchor, len(states))
+                #print(','.join(map(str, values)))
+                last_anchor = values[ANCHOR]
+                last_anchor_time = time
+
+            last_time = time
+        # print('{}, Anchor change : {}, Anchor: {}'.format(last_anchor_time, time-last_anchor_time, last_anchor))
+        trans += [[str(last_anchor_time), last_anchor]]
+        states.setdefault(last_anchor, len(states))
+
+        return trans, states
 
 if __name__ == '__main__':
-    cloud_settings = {'host': '192.168.2.30', 'dbname': 'host'}
+    cloud_settings = {'host': '192.168.2.12'}
+    # Time in UTC
+    db_settings = {'dbname': 'house',
+                   'series': 'LOC',
+                      'start': '2018-06-22T00:00:00Z',
+                      'end': '2018-06-22T01:00:00Z'}
 
-    receiver = BatchReceiver(**cloud_settings)
-    receiver.receiveData()
+    receiver = DataReceiver(host='192.168.2.12')
+    results = receiver.retrieve_data(**db_settings)
+    data = results[0]["series"][0]
+    #data = receiver.getAnchors(**db_settings)
+
+    #print(data)
+    #exit()
+    if data:
+        # Print everything
+        receiver.print_data(data)
+        # Print periods
+        trans, states = receiver.generate_states(data, rr_tag_filter)
+        print(states)
+        print(trans)
+    else:
+        print("Could not receive data!")
+
+
+"""
+Then, the  data from InfluxDB comes similar to this:
+    {
+    "results": [
+        {'statement_id': 0, 
+        'series': [
+            {'name': 'LOC', 
+            'columns': ['time', 'anchor', 'cycle', 'range', 'room', 'tag'], 
+            'values': [['2018-02-24T00:00:00Z', '3435471531313530270180', 146, 23.18, None, '3136471934373039310400'], 
+            ['2018-02-24T00:00:00Z', '34354715313135302C0200', 146, 22.711, None, '3136471934373039310400'], 
+            ['2018-02-24T00:00:01Z', '3435471531313530270180', 147, 23.147, None, '3136471934373039310400'], 
+            ...
+            }
+        ]
+        }
+    }
+
+"""
+
+# Change the SELECT statement to retrieve the desired data set
+# Example 1
+# payload = {'db':'house', 'q':"SELECT range, cycle FROM LOC WHERE anchor='34354715313135302C0200' and time > '2018-02-22'"}
