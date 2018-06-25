@@ -5,50 +5,72 @@ import requests
 from datetime import datetime as dt
 from datetime import timedelta as delta
 #import matplotlib.pyplot as plt
+from turtle import *
+import json
 
 # To differentiate between volunteers
 rr_tag_filter = ['3136471934373039260400', '31364719343730391F0400']
 
 GAP_TIME = 30 #Secounds
 
+WIDTH = 600
+HEIGHT = 400
+
 class DataReceiver():
     """Use this class to get data from the server
     """
     url_read_template = 'http://{}:{}/query'
-    sucess_log_msg = 'Data from "{}" was sent to remote server successfully ({} lines in {} seconds.)'
-    failed_log_msg = 'Attempt to send data from "{}" to remote server was not successful.'
     not_found_msg = '{} not defined!'
 
-    def __init__(self, **args):
-        host = args.get('host', '0.0.0.0')
-        port = args.get('port', 8086)
+    cache = {}
+
+    def __init__(self, host='0.0.0.0', port=8086, cachefile="cache.txt"):
         self.url_read = self.url_read_template.format(host, port)
+        self.cachefile = cachefile
+        with open(cachefile, 'r') as infile:
+            self.cache = json.load(infile)
 
     def retrieve_data(self, **args):
         """
         Sends a GET requet to the remote server.
         """
 
-        dbname = args.get('dbname', None)
-        if not dbname:
-            exit(self.not_found_msg.format("Database name"))
-        series = args.get('series', None)
-        if not dbname:
-            exit(self.not_found_msg.format("series name"))
-        time_start = args.get('start', None)
-        if not dbname:
-            exit(self.not_found_msg.format("start time"))
-        time_end = args.get('end', None)
-        if not dbname:
-            exit(self.not_found_msg.format("end time"))
+        try:
+            dbname = args['dbname']
+            series = args['series']
+            time_start = args['start']
+            time_end = args['end']
+        except Exception as e:
+            exit(e)
 
         query = "SELECT * FROM {} WHERE time >= '{}' and time <'{}'".format(series, time_start, time_end)
-        payload = {'db': dbname, 'q': query}
 
+        # read data from the cache, if available
+        if query in self.cache:
+            filename = self.cache[query]
+            with open(filename, 'r') as infile:
+                print("Reading data from cache.")
+                return json.load(infile)
+
+        payload = {'db': dbname, 'q': query}
         try:
+            print("Reading data from server.")
             r = requests.get(self.url_read, payload)
             if r.status_code == 200:
-                return r.json()["results"]
+                data = r.json()["results"][0]["series"][0]
+                filename = "data{}.txt".format(len(self.cache)+1)
+
+                # save the query results
+                with open(filename, 'w') as outfile:
+                    json.dump(data, outfile)
+                    self.cache[query] = filename
+
+                # save the new cache content
+                with open(self.cachefile, 'w') as outfile:
+                    json.dump(self.cache, outfile)
+
+                return data
+
         except Exception as e:
             print(e)
         return None
@@ -60,7 +82,7 @@ class DataReceiver():
             for values in series['values']:
                 file.write(','.join(map(str, values))+"\n")
 
-    def generate_states(self, series, filter=None):
+    def get_state_rep(self, series, filter=None):
         trans = []
         states = {None: 0}
 
@@ -84,8 +106,8 @@ class DataReceiver():
                 # df = time - last_time
                 # print('{}, Anchor change : {}, Anchor: {}'.format(last_anchor_time, last_time - last_anchor_time, last_anchor))
                 # print('{}, Gap detected  : {}, Anchor: {}'.format(last_time, df, values[ANCHOR]))
-                trans += [[str(last_anchor_time), last_anchor]]
-                trans += [[str(last_time), None]]
+                trans += [[last_anchor_time, last_anchor]]
+                trans += [[last_time, None]]
                 states.setdefault(last_anchor, len(states))
 
                 # start over
@@ -98,7 +120,7 @@ class DataReceiver():
             if values[ANCHOR] != last_anchor:
                 # df = time - last_anchor_time
                 # print('{}, Anchor change : {}, Anchor: {}'.format(last_anchor_time, df, last_anchor))
-                trans += [[str(last_anchor_time), last_anchor]]
+                trans += [[last_anchor_time, last_anchor]]
                 states.setdefault(last_anchor, len(states))
                 #print(','.join(map(str, values)))
                 last_anchor = values[ANCHOR]
@@ -106,35 +128,45 @@ class DataReceiver():
 
             last_time = time
         # print('{}, Anchor change : {}, Anchor: {}'.format(last_anchor_time, time-last_anchor_time, last_anchor))
-        trans += [[str(last_anchor_time), last_anchor]]
+        trans += [[last_anchor_time, last_anchor]]
         states.setdefault(last_anchor, len(states))
 
         return trans, states
+
+class Plotter():
+
+    def __init__(self, trans, states):
+        tmp = [t[0].timestamp() for t in trans]
+        self.x_axis = [t-tmp[0] for t in tmp]
+        self.y_axis = [states[s[1]] for s in trans]
+
+        self.x_scale = WIDTH / self.x_axis[-1]
+        self.y_scale = HEIGHT / len(states)
+
+
 
 if __name__ == '__main__':
     cloud_settings = {'host': '192.168.2.12'}
     # Time in UTC
     db_settings = {'dbname': 'house',
                    'series': 'LOC',
-                      'start': '2018-06-22T00:00:00Z',
-                      'end': '2018-06-22T01:00:00Z'}
+                      'start': '2018-06-21T00:00:00Z',
+                      'end': '2018-06-22T00:00:00Z'}
 
     receiver = DataReceiver(host='192.168.2.12')
-    results = receiver.retrieve_data(**db_settings)
-    data = results[0]["series"][0]
-    #data = receiver.getAnchors(**db_settings)
+    data = receiver.retrieve_data(**db_settings)
+    #data = results[0]["series"][0]
 
-    #print(data)
-    #exit()
-    if data:
-        # Print everything
-        receiver.print_data(data)
-        # Print periods
-        trans, states = receiver.generate_states(data, rr_tag_filter)
-        print(states)
-        print(trans)
-    else:
-        print("Could not receive data!")
+    if not data:
+        exit("Could not receive data!")
+
+    # Print everything
+    # receiver.print_data(data)
+
+    # Get states representation of data
+    trans, states = receiver.get_state_rep(data, rr_tag_filter)
+    print("States:\n ",states)
+    print("Transitions:\n ",trans)
 
 
 """
