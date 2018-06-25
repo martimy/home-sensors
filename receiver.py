@@ -4,8 +4,6 @@
 import requests
 from datetime import datetime as dt
 from datetime import timedelta as delta
-#import matplotlib.pyplot as plt
-from turtle import *
 import json
 
 # To differentiate between volunteers
