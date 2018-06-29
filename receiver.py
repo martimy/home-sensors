@@ -25,8 +25,11 @@ class DataReceiver():
     def __init__(self, host='0.0.0.0', port=8086, cachefile="cache.txt"):
         self.url_read = self.url_read_template.format(host, port)
         self.cachefile = cachefile
-        with open(cachefile, 'r') as infile:
-            self.cache = json.load(infile)
+        try:
+            with open(cachefile, 'r') as infile:
+                self.cache = json.load(infile)
+        except IOError as e:
+            print("{}. Moving on.".format(e))
 
     def retrieve_data(self, **args):
         """
@@ -70,6 +73,8 @@ class DataReceiver():
                 return data
 
         except Exception as e:
+            s = requests.session()
+            s.config['keep_alive'] = False
             print(e)
         return None
 
@@ -148,10 +153,10 @@ if __name__ == '__main__':
     # Time in UTC
     db_settings = {'dbname': 'house',
                    'series': 'LOC',
-                      'start': '2018-06-21T00:00:00Z',
-                      'end': '2018-06-22T00:00:00Z'}
+                      'start': '2018-06-23T00:00:00Z',
+                      'end': '2018-06-23T08:00:00Z'}
 
-    receiver = DataReceiver(host='192.168.2.12')
+    receiver = DataReceiver(host='adhoc.no-ip.org')
     data = receiver.retrieve_data(**db_settings)
     #data = results[0]["series"][0]
 
