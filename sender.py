@@ -34,7 +34,7 @@ class BatchSender():
     file_log_msg = 'Data from "{}" was sent to remote server ({} lines in {} seconds with {} errors.)'
     not_found_msg = '{} not found in the configuration file!'
 
-    hours_past = 3
+    hours_past = 8
 
     def __init__(self, **args):
         if not args: exit(self.not_found_msg.format("Cloud settings"))
