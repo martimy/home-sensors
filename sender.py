@@ -8,6 +8,8 @@ import util
 import logging, fnmatch, time, calendar, os, sys, csv, requests
 
 
+HOUR = 3600 # seconds
+
 class BatchSender():
     """
     This class reads the local data files and send the data to a remote sever.
@@ -29,10 +31,11 @@ class BatchSender():
     url_write_template = 'http://{}:{}/write?db={}'
     sucess_log_msg = 'Data from "{}" was sent to remote server successfully ({} lines in {} seconds.)'
     failed_log_msg = 'Attempt to send data from "{}" to remote server was not successful.'
+    file_log_msg = 'Data from "{}" was sent to remote server ({} lines in {} seconds with {} errors.)'
     not_found_msg = '{} not found in the configuration file!'
 
-    hours_past = 3
-    
+    hours_past = 8
+
     def __init__(self, **args):
         if not args: exit(self.not_found_msg.format("Cloud settings"))
         host = args.get('host', None)
@@ -81,7 +84,10 @@ class BatchSender():
         they are added to the sentfiles log. See class description of caveats.
         """
 
-        HOUR = 3600 # seconds
+        if not filelist:
+            print("No files to send!")
+            return
+
         # read list of files that have been sent
         sentfiles = []
         try:
@@ -90,7 +96,7 @@ class BatchSender():
                 sentfiles = [f[:-1] for f in sfile.readlines()]                
         except:
             pass
-
+        
         for f in [x for x in filelist if x not in sentfiles]:
             with open(self.sent_files_log, 'a') as sfile:
                 ext = os.path.splitext(f)[1].upper()
@@ -131,28 +137,24 @@ class BatchSender():
         """
         This method reads a .dat file. Each row in the file represents a database
         query that can be executed by the remote server (which supports InfluxDB).
-
-        # this method is almost identical to the one above so maybe there
-        # is a way to merge the two
         """
         with open(filename, 'r') as f:
             reader = f.readlines()
             a = datetime.now()
             index, counter, payload = 0, self.batch_size, []
+            errors = 0
             for row in reader:
                 payload.append(row)
+                index +=1
                 if not index % counter:
-                    if not self._sendPayload(''.join(payload)):
-                        return False
+                    errors += self._sendPayload(''.join(payload))
                     payload = []
-                index += 1
             if payload:
-                if not self._sendPayload(''.join(payload)):
-                    return False
+                errors += self._sendPayload(''.join(payload))
             b = datetime.now()
-            print(self.sucess_log_msg.format(filename, index, (b-a).seconds))
+            print(self.file_log_msg.format(filename, index, (b-a).seconds, errors))
         return True
-    
+
     def _nanosec(self, t):
         """
         A utility method that retuns Unix time given UTC time in rfc3339 format.
@@ -165,7 +167,7 @@ class BatchSender():
         This method is called by the csv file reader to translate the comma-seperated
         columns in the file into a database query.
 
-        TODO: This works only for DHT sensor. It neede o be generalized
+        TODO: This works only for DHT sensor. It neede to be generalized
         """
         influx_payload = '{},room=basement temperature={},humidity={} {:.0f}'     # sensor, temperature,humidity time
         [t, sensor, temp, hum] = row
@@ -175,18 +177,21 @@ class BatchSender():
         """
         Sends a POST requet to the remote server.
         """
+
+        errors = 0
         if self.testmode:
             print(payload)
-            return True
+            return errors
 
         count = self.retries
         while count:
             r = requests.post(self.url_write, payload)
             if r.status_code == 204:                             # hard-coded code!
-                return True
+                return errors
             count -= 1
         logging.error('Code:{} Msg:{}'.format(r.status_code,r.text))
-        return False
+        errors += 1
+        return errors
            
 if __name__ == '__main__':
     # Read configuration file
@@ -196,7 +201,7 @@ if __name__ == '__main__':
     cloud_settings = cfg.getSection("cloud")
     
     sender = BatchSender(**cloud_settings)
-    sender.sendData(fullname)
+    sender.sendData(fullname, testmode=False)
            
 ##    t = '2017-12-27 00:28:09.270813'  # UTC
 ##    dt = datetime.strptime(t, '%Y-%m-%d %H:%M:%S.%f')
