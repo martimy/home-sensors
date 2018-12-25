@@ -1,9 +1,11 @@
 [Unit]
-Description=Run sensordata-send service every hour
+Description=Run sensordata-send service daily at 2:00am
 
 [Timer]
-OnBootSec=5min
-OnUnitActiveSec=1hr 
+#OnBootSec=5min
+#OnUnitActiveSec=5min
+OnCalendar=*-*-* 2:00:00
+Persistent=true
 
 [Install]
 WantedBy=timers.target

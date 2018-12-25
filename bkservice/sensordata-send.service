@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 User=pi
 WorkingDirectory=/home/pi/sensors
-ExecStart=/home/pi/sensors/run-sender.sh
+ExecStart=/home/pi/sensors/run-sender.sh /home/pi/sensordata gvm@192.168.2.15 /home/gvm/
 Restart=on-abort
 
 [Install]

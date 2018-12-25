@@ -11,19 +11,17 @@ from ruuvitag_sensor.ruuvi_rx import RuuviTagReactive
 ruuvi_rx = RuuviTagReactive()
 
 def handle_data(d):
-
+    if not d:
+        return
+    
     # Get server time in UTC
     
-    # Method 1: does not seem to work well with daylight saving time
-    #dt = datetime.now()
-    #ns = time.mktime(dt.utctimetuple()) * 1e9
-    
-    # Method 1: does not seem to work well with daylight saving time
-    utc = pytz.timezone('UTC')
-    now = utc.localize(datetime.utcnow())
-    ns3 = time.mktime(now.timetuple()) * 1e9
+    # Get UTC time
+    ns = time.time() * 1e9
+    #ns -= time.daylight * 60 * 60 * 1e9
+    today = time.strftime('%Y-%m-%d', time.gmtime())
 
-    filename = "/home/pi/sensordata/sensordata" + '-' + str(date.today()) + ".dat"
+    filename = "/home/pi/sensordata/sensordata" + '-' + today + ".dat"
 
     # get the last reading in the buffer
     tagmac = d[-1][0].replace(':','')
@@ -34,9 +32,9 @@ def handle_data(d):
     #ns2 = time.mktime(dt2.utctimetuple()) * 1e9
     
     # Get the data in a keyward=value format
-    line = 'RUUVI,tag={} '.format(tagmac)
+    line = 'INWK,tag={} '.format(tagmac)
     line += ','.join(['{}={}'.format(k,tagdata[k]) for k in tagdata if k!='time'])   
-    line += ' {:.0f}'.format(ns3)
+    line += ' {:.0f}'.format(ns)
     
     with open(filename, 'a') as myFile:
         myFile.write(line + '\n')
@@ -57,3 +55,4 @@ ruuvi_rx.get_subject().\
     filter(lambda x: x[0] == 'F1:4A:DA:A1:8E:1D').\
     buffer_with_time(10000).\
     subscribe(handle_data)
+
