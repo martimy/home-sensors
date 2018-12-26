@@ -10,12 +10,13 @@
 # By Maen Artimy
 
 import time
+import socket
 
 UDP_IP = '0.0.0.0'
 UDP_PORT = 10000
 version = "0.2"
 
-print("Localino Datadisplay started, Version: "), version
+print("Localino Datadisplay started, Version: ", version)
 
 sock = socket.socket(socket.AF_INET,  # Internet
                      socket.SOCK_DGRAM)  # UDP
