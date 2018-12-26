@@ -3,7 +3,7 @@ Description=Run sensordata-send service daily at 2:00am
 
 [Timer]
 #OnBootSec=5min
-#OnUnitActiveSec=5min
+#OnUnitActiveSec=1min
 OnCalendar=*-*-* 2:00:00
 Persistent=true
 
