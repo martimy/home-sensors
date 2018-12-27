@@ -20,7 +20,7 @@ def handle_data(d):
     #ns -= time.daylight * 60 * 60 * 1e9
     today = time.strftime('%Y-%m-%d', time.gmtime())
 
-    filename = "/home/pi/sensordata/" + NODE_ID + '-' + today + ".dat"
+    filename = "/home/pi/sensordata/data-{}-{}.dat".format(today,NODE_ID)
 
     # get the last reading in the buffer
     tagmac = d[-1][0].replace(':', '')
