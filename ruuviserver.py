@@ -26,10 +26,6 @@ def handle_data(d):
     tagmac = d[-1][0].replace(':', '')
     tagdata = d[-1][1]
 
-    # Sensor time gives the same time as ns
-    #dt2 = datetime.strptime(tagdata["time"], "%Y-%m-%d %H:%M:%S.%f")
-    #ns2 = time.mktime(dt2.utctimetuple()) * 1e9
-
     # Get the data in a keyward=value format
     line = 'INWK,tag={} '.format(tagmac)
     line += ','.join(['{}={}'.format(k, tagdata[k])
