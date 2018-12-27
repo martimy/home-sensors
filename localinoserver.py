@@ -11,7 +11,10 @@
 
 import time
 import socket
+from uuid import getnode
 
+
+NODE_ID = getnode()
 UDP_IP = '0.0.0.0'
 UDP_PORT = 10000
 version = "0.2"
@@ -53,7 +56,7 @@ while True:
             ns = time.time() * 1e9
             today = time.strftime('%Y-%m-%d', time.gmtime())
 
-            filename = "/home/pi/sensordata/sensordata" + '-' + today + ".dat"
+            filename = "/home/pi/sensordata/" + NODE_ID + '-' + today + ".dat"
 
             line = 'LOC,anchor={},tag={} '.format(anchor, tag)
             line += 'range={},cycle={} {:.0f}'.format(range, cycle, ns)

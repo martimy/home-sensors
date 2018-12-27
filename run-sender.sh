@@ -1,7 +1,7 @@
 #!/bin/bash
 LOGFILE=sent.log
 # Send all files created yeserday.
-FILES=/home/pi/sensordata/sensordata-$(date -d "yesterday" '+%Y-%m-%d')*
+FILES=/home/pi/sensordata/*-$(date -d "yesterday" '+%Y-%m-%d')*
 HOST=gvm@192.168.2.15
 RFOLDER=/home/gvm/sensordata/
 

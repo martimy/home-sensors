@@ -4,7 +4,10 @@
 
 import time
 from ruuvitag_sensor.ruuvi_rx import RuuviTagReactive
+from uuid import getnode
 
+
+NODE_ID = getnode()
 ruuvi_rx = RuuviTagReactive()
 
 
@@ -17,7 +20,7 @@ def handle_data(d):
     #ns -= time.daylight * 60 * 60 * 1e9
     today = time.strftime('%Y-%m-%d', time.gmtime())
 
-    filename = "/home/pi/sensordata/sensordata" + '-' + today + ".dat"
+    filename = "/home/pi/sensordata/" + NODE_ID + '-' + today + ".dat"
 
     # get the last reading in the buffer
     tagmac = d[-1][0].replace(':', '')
