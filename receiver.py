@@ -7,8 +7,8 @@ from datetime import timedelta as delta
 import json
 
 # To differentiate between volunteers
-rr_tag_filter = ['3136471934373039260400', '31364719343730391F0400']
-mc_tag_filter = ['34374714363934352703B0', '34374714363934354302B0']
+rr_tag_filter = ['3136471934373039260400', '31364719343730391F0400', '34374714363934352803F0']
+mc_tag_filter = ['34374714363934352703B0', '34374714363934354302B0', '3136471934373039310400']
 
 GAP_TIME = 30 #Secounds
 
@@ -154,8 +154,8 @@ if __name__ == '__main__':
     # Time in UTC
     db_settings = {'dbname': 'house',
                    'series': 'LOC',
-                      'start': '2018-10-01T00:00:00Z',
-                      'end': '2018-10-31T00:00:00Z'}
+                      'start': '2018-12-01T00:00:00Z',
+                      'end': '2018-12-31T00:00:00Z'}
 
     receiver = DataReceiver(host='192.168.2.12')
     data = receiver.retrieve_data(**db_settings)
@@ -168,7 +168,7 @@ if __name__ == '__main__':
     # receiver.print_data(data)
 
     # Get states representation of data
-    trans, states = receiver.get_state_rep(data, mc_tag_filter)
+    trans, states = receiver.get_state_rep(data, rr_tag_filter)
     print("States:\n ",states)
     print("Transitions:\n ",trans)
 
