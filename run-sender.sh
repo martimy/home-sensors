@@ -1,9 +1,15 @@
 #!/bin/bash
-LOGFILE=sent.log
-# Send all files created yeserday (local time).
-FILES=/home/pi/sensordata/data-$(date -d "yesterday" '+%Y-%m-%d')*.dat
 HOST=gvm@192.168.2.15
+LFOLDER=/home/pi/sensordata
 RFOLDER=/home/gvm/sensordata/
+LOGFILE=sent.log
+
+TODAY=$(date '+%Y-%m-%d')
+
+# Select all .dat files except today's.
+cd $LFOLDER
+shopt -s extglob
+FILES=!(data-$TODAY*).dat
 
 for f in $FILES
 do
@@ -13,9 +19,9 @@ do
   status=$?
   if test $status -eq 0
   then
-      { { date; echo ": File $f is sent successfully."; } | tr "\n" " "; echo ""; } >> $LOGFILE
-      gzip $f
+    { { date; echo ": File $f is sent successfully."; } | tr "\n" " "; echo ""; } >> $LOGFILE
+    gzip $f
   else
-      { { date; echo ": File $f could not be sent. Error: $status."; } | tr "\n" " "; echo ""; }  >> $LOGFILE
+    { { date; echo ": File $f could not be sent. Error: $status."; } | tr "\n" " "; echo ""; }  >> $LOGFILE
   fi
 done
