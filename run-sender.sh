@@ -1,7 +1,7 @@
 #!/bin/bash
 HOST=dbase@192.168.2.12
 LFOLDER=/home/pi/sensordata
-RFOLDER=/home/dbase/sensordata/
+RFOLDER=/home/dbase/sensordata/house/
 LOGFILE=sent.log
 
 TODAY=$(date '+%Y-%m-%d')

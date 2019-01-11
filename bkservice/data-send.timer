@@ -1,5 +1,5 @@
 [Unit]
-Description=Run sensordata-send service daily at 2:00am
+Description=Run data-send service daily at 2:00am
 
 [Timer]
 #OnBootSec=5min
