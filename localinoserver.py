@@ -56,7 +56,8 @@ while True:
             ns = time.time() * 1e9
             today = time.strftime('%Y-%m-%d', time.gmtime())
 
-            filename = "/home/pi/sensordata/" + NODE_ID + '-' + today + ".dat"
+            #filename = "/home/pi/sensordata/" + NODE_ID + '-' + today + ".dat"
+            filename = "/home/pi/sensordata/data-{}-{}.dat".format(today,NODE_ID)
 
             line = 'LOC,anchor={},tag={} '.format(anchor, tag)
             line += 'range={},cycle={} {:.0f}'.format(range, cycle, ns)
