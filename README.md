@@ -20,9 +20,11 @@ Edit the following line in the file config.yaml and save:
 
     host: <the server address>
  
-Also, edit the following line in the file run_sender.sh and save:
+Edit the following line in the file run_sender.sh and save:
 
     HOST=<the server address>
+
+Uncomment the command in run_server.sh that matches the sensors you want to read:
 
 ## Dependencies
 
@@ -48,7 +50,7 @@ Test the connection from remote device (you should be able to login without pass
 
     $ ssh dbase@<the server address>
 
-To test if sending files alos works, create an empty file and send it to the server:
+To test if sending files alos works, create an empty file with .dat extension and send it to the server:
 
     $ touch ~/sensordata/fake.dat
     $ ./run_sender
@@ -63,10 +65,10 @@ Enable the services
 
     $ sudo systemctl start sensor-read.sevrice
     $ sudo systemctl enable sensor-read.sevrice
-    $ sudo systemctl start sensordata-send.timer
-    $ sudo systemctl enable sensordata-send.timer
+    $ sudo systemctl start data-send.timer
+    $ sudo systemctl enable data-send.timer
 
-The following services will show the services are active and running
+The following commands will show the services are active and running
 
     $ systemctl list-units | grep sensor
     $ systemctl list-timers
